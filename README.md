@@ -1,2 +1,2 @@
 # c8-techJam
-winners of the tikTok TechJam 2025
+winners of the TikTok TechJam 2025
