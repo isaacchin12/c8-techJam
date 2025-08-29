@@ -27,13 +27,13 @@ for chunk in all_chunks:
         "section": chunk.get("section"),
         "url": chunk.get("url"),
         "language": chunk.get("language"),
-        "tags": chunk.get("tags")
+        "tags": ", ".join(chunk["tags"])
     }
 
     collection.add(
         documents=[chunk["text"]],
         embeddings=chunk["embedding"],
-        #metadatas=metadata,
+        metadatas=metadata,
         ids=[chunk.get("id", str(uuid.uuid4()))]
     )
 
@@ -45,34 +45,48 @@ def get_embedding(text):
     )
     return response.json()['embeddings']
 
-query = "What are Florida’s restrictions on minors using social media?"
-query_embedding = get_embedding(query)
+def query_ollama(query, model="gemma3"):
 
-results = collection.query(
-    query_embeddings=query_embedding,
-    n_results=5
-)
+    query_embedding = get_embedding(query)
+    results = collection.query(
+        query_embeddings=query_embedding,
+        n_results=5
+    )
 
-retrieved_chunks = [doc for doc in results["documents"][0]]
+    retrieved_chunks = [doc for doc in results["documents"][0]]
 
-context = "\n\n".join(retrieved_chunks)
+    context = "\n\n".join(retrieved_chunks)
 
-prompt = f"""
-You are an expert on geo-compliance laws.
-Answer the following question based only on the context below:
+    prompt = f"""
+    You are an expert on geo-compliance laws, and you are very familiar with the following extracted parts of laws:
+    1. EU Digital Services Act (DSA)
+    2. California Consumer Privacy Act (CCPA)
+    3. Florida’s Online Protections for Minors
+    4. US CyberTipline Modernization Act of 2018
 
-Context:
-{context}
+    User input: Feature artifacts for certain tech products. This can be the title, description, or any other relevant text that describes the feature.
+    Examples:
+    - "Feature reads user location to enforce France's copyright rules (download blocking)"
+    - "Requires age gates specific to Indonesia's Child Protection Law"
+    - "Geofences feature rollout in US for market testing" (Business-driven ≠ legal requirement)
+    - "A video filter feature is available globally except KR" (didn't specify the intention, need human evaluation)
 
-Question: {query}
+    Output or goal: 
+    Determine if the feature artifact has geo-compliance implications. If yes, identify the relevant laws and provide a brief explanation of why it is relevant. If no, simply state "No geo-compliance implications".
+    Provide clear reasoning for your conclusions and also pointing out the source and the exact text.
+    Provide a confidence score from 1-10 for each identified law, where 10 means absolutely certain and 1 means very uncertain.
+    If you are unsure, say "Insufficient information to determine geo-compliance implications".
 
-Answer:
-"""
+    Answer the following question based only on the context below:
 
+    Context:
+    {context}
 
-import requests
+    Question: {query}
 
-def query_ollama(prompt, model="gemma3"):
+    Answer:
+    """
+
     response = requests.post(
         "http://localhost:11434/api/generate",
         json={"model": model, "prompt": prompt},
@@ -89,5 +103,6 @@ def query_ollama(prompt, model="gemma3"):
     return output
 
 # Example usage
-answer = query_ollama("Summarize Florida’s Online Protections for Minors law.")
+query_1 = "Feature reads user location to enforce France's copyright rules (download blocking)"
+answer = query_ollama(query_1, model="gemma3")
 print("LLM Answer:\n", answer)
