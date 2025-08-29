@@ -5,6 +5,8 @@ import os
 import json
 import uuid
 
+import requests
+
 
 # persistent store
 client = chromadb.PersistentClient(path="./chroma_store")  # <-- make this a volume in Docker
@@ -30,7 +32,62 @@ for chunk in all_chunks:
 
     collection.add(
         documents=[chunk["text"]],
-        embeddings=[chunk["embedding"]],
-        metadatas=[metadata],
+        embeddings=chunk["embedding"],
+        #metadatas=metadata,
         ids=[chunk.get("id", str(uuid.uuid4()))]
     )
+
+
+def get_embedding(text):
+    response = requests.post(
+        "http://localhost:11434/api/embed",
+        json={"model": "nomic-embed-text:latest", "input": text}
+    )
+    return response.json()['embeddings']
+
+query = "What are Florida’s restrictions on minors using social media?"
+query_embedding = get_embedding(query)
+
+results = collection.query(
+    query_embeddings=query_embedding,
+    n_results=5
+)
+
+retrieved_chunks = [doc for doc in results["documents"][0]]
+
+context = "\n\n".join(retrieved_chunks)
+
+prompt = f"""
+You are an expert on geo-compliance laws.
+Answer the following question based only on the context below:
+
+Context:
+{context}
+
+Question: {query}
+
+Answer:
+"""
+
+
+import requests
+
+def query_ollama(prompt, model="gemma3"):
+    response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={"model": model, "prompt": prompt},
+        stream=True
+    )
+    output = ""
+    for line in response.iter_lines():
+        if line:
+            data = json.loads(line.decode("utf-8"))
+            if "response" in data:
+                output += data["response"]
+            if data.get("done", False):
+                break
+    return output
+
+# Example usage
+answer = query_ollama("Summarize Florida’s Online Protections for Minors law.")
+print("LLM Answer:\n", answer)
