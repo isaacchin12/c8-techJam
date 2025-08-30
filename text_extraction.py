@@ -115,7 +115,7 @@ def clean_text(text):
 # TOKENIZER for chunking
 # -------------------------------
 
-def chunk_text(text, max_tokens=600, overlap=120):
+def chunk_text(text, max_tokens=400, overlap=100):
     sentences = sent_tokenize(text)
     chunks, current_chunk = [], []
     current_len = 0
@@ -190,7 +190,7 @@ def extract_texts(file_paths: list) -> dict:
 def get_embedding(text):
     response = requests.post(
         "http://localhost:11434/api/embed",
-        json={"model": "nomic-embed-text:latest", "input": text}
+        json={"model": "mxbai-embed-large", "input": text}
     )
     return response.json()['embeddings']
 
