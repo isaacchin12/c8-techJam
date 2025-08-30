@@ -102,8 +102,8 @@ def query_ollama(query, expanded_query, model="llama3"):
 
     response = requests.post(
         "http://localhost:11434/api/generate",
-        json={"model": model, "prompt": prompt},
-        stream=True
+        json={"model": model, "prompt": prompt, "temperature": 0.1, "format": "json", "max_tokens": 800},
+        stream=True,
     )
     output = ""
     for line in response.iter_lines():
