@@ -12,32 +12,38 @@ import requests
 
 
 # persistent store
-client = chromadb.PersistentClient(path="./chroma_store")  # <-- make this a volume in Docker
+def set_up_chromadb():
 
-collection = client.get_or_create_collection("geo_compliance")
+    client = chromadb.PersistentClient(path="./chroma_store")  # <-- make this a volume in Docker
 
-with open("rag_chunks.json", "r", encoding="utf-8") as f:
-    all_chunks = json.load(f)
+    collection = client.get_or_create_collection("geo_compliance")
 
-for chunk in all_chunks:
-    metadata = {
-        "source": chunk["source"],
-        "title": chunk["title"],
-        "publisher": chunk.get("publisher"),
-        "jurisdiction": chunk.get("jurisdiction"),
-        "law_type": chunk.get("law_type"),
-        "effective_date": chunk.get("effective_date"),
-        "url": chunk.get("url"),
-        "language": chunk.get("language"),
-        "tags": ", ".join(chunk["tags"])
-    }
+    with open("rag_chunks.json", "r", encoding="utf-8") as f:
+        all_chunks = json.load(f)
 
-    collection.add(
-        documents=[chunk["text"]],
-        embeddings=chunk["embedding"],
-        metadatas=metadata,
-        ids=[chunk.get("id", str(uuid.uuid4()))]
-    )
+    for chunk in all_chunks:
+        metadata = {
+            "source": chunk["source"],
+            "title": chunk["title"],
+            "publisher": chunk.get("publisher"),
+            "jurisdiction": chunk.get("jurisdiction"),
+            "law_type": chunk.get("law_type"),
+            "effective_date": chunk.get("effective_date"),
+            "url": chunk.get("url"),
+            "language": chunk.get("language"),
+            "tags": ", ".join(chunk["tags"])
+        }
+
+        collection.add(
+            documents=[chunk["text"]],
+            embeddings=chunk["embedding"],
+            metadatas=metadata,
+            ids=[chunk.get("id", str(uuid.uuid4()))]
+        )
+
+    return collection
+
+#set_up_chromadb
 
 
 def get_embedding(text):
