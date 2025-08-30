@@ -46,7 +46,7 @@ git clone https://github.com/{yourusername}/compliai.git
 cd compliai
 pip install -r requirements.txt
 ```
-This step includes adding the ollama LLMs locally, via cmd.
+This step includes adding the ollama LLMs locally, via the Command Prompt. Download the models if you have yet to.
 ```cmd
 ollama pull mxbai-embed-large
 ollam run gemma3
