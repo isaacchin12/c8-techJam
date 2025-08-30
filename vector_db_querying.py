@@ -8,6 +8,7 @@ import re
 import requests
 from rank_bm25 import BM25Okapi
 from sentence_transformers import CrossEncoder
+from datetime import datetime
 
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
@@ -82,7 +83,7 @@ def get_embedding(text):
 # ================================
 
 # ========== Hybrid Search ==========
-def hybrid_search(query, collection, all_documents, top_k=5, alpha=0.7):
+def hybrid_search(query, collection, all_documents, feedback_collection=None, top_k=5, alpha=0.7, beta = 0.2, gamma =0.1):
 
         # 1. Semantic search via Chroma
     query_embedding = get_embedding(query)
@@ -109,7 +110,12 @@ def hybrid_search(query, collection, all_documents, top_k=5, alpha=0.7):
     for doc in candidates:
         v_score = vector_scores[vector_docs.index(doc)] if doc in vector_docs else 0
         k_score = keyword_scores[all_documents.index(doc)] if doc in all_documents else 0
-        final_score = alpha * v_score + (1 - alpha) * k_score
+        #if feedback_collection and doc in feedback_collection:
+        #    f_score = feedback_collection[doc]
+        #else:
+        f_score = 1  # set to 1 just for an example, to represent 1 good user feedback.
+
+        final_score = alpha * v_score + beta * k_score + gamma * f_score
         fused_results.append((doc, final_score))
 
     # 4. Sort & return top_k
@@ -117,23 +123,18 @@ def hybrid_search(query, collection, all_documents, top_k=5, alpha=0.7):
     return [doc for doc, _ in fused_results]
 
 # ================================
+
+# ========== Reranked ==========
 def rerank_results(query, retrieved_chunks):
     pairs = [(query, chunk) for chunk in retrieved_chunks]
     scores = reranker.predict(pairs)
     reranked = [chunk for _, chunk in sorted(zip(scores, retrieved_chunks), reverse=True)]
     return reranked
-
-#retrieved_chunks = hybrid_search(query, collection, all_documents, top_k=5, alpha = 0.7)
-
-# Apply reranker
-#reranked_chunks = rerank_results(query, retrieved_chunks)
-
-# Pick top-N for context
-#context = "\n\n".join(reranked_chunks[:3])
+# ================================
 
 
 
-##### Querying function
+# ========== Querying Function ==========
 def query_ollama(query, expanded_query, model, documents, prompt_file_path):
 
     retrieved_chunks = hybrid_search(query, collection, documents, top_k=5, alpha=0.7)
@@ -156,7 +157,7 @@ def query_ollama(query, expanded_query, model, documents, prompt_file_path):
                 "prompt": prompt, 
                 "temperature": 0.1, 
                 "format": "json", 
-                "max_tokens": 800
+                "max_tokens": 700
             },
         stream=True,
     )
@@ -169,14 +170,64 @@ def query_ollama(query, expanded_query, model, documents, prompt_file_path):
             if data.get("done", False):
                 break
     return output
-
-# Example usage
-query_1 = "User behavior scoring for policy gating: Behavioral scoring via Spanner will be used to gate access to certain tools. The feature tracks usage and adjusts gating based on BB divergence."
-with open("data_sources/terminology.json", "r", encoding="utf-8") as f:
-    glossary = json.load(f)
-expanded_query = expand_abbreviations(query_1, glossary)
+# ===================================
 
 
-answer = query_ollama(query_1, expanded_query, model="llama3.1", documents=all_documents, prompt_file_path="prompts/geo_compliance_prompt.txt")
 
-print(answer)
+
+# ========== Save Feedback ==========
+
+def save_feedback_to_chroma(feedback, client_path="./chroma_store"):
+
+        client = chromadb.PersistentClient(path=client_path)
+        feedback_col = client.get_or_create_collection("geo_feedback")
+
+        feedback_col.add(
+            documents=[feedback["answer"]],
+            embeddings=get_embedding(feedback["query"]),
+            ids=[str(uuid.uuid4())]
+        )
+
+# ===================================
+
+# ========== Query + Feedback ==========
+def query_with_feedback(query, expanded_query, model, documents, prompt_file_path):
+    """
+    Run query through RAG pipeline, collect human feedback, and store in ChromaDB.
+    """
+    # 1. Get model answer
+    answer = query_ollama(query, expanded_query, model, documents, prompt_file_path)
+    print("\n--- Response ---")
+    print(answer)
+
+    while True:
+        feedback_rating = input("Thumbs up/down? (u/d): ").strip().lower()
+        if feedback_rating in ["u", "d"]:
+            break
+        print("Invalid input. Type 'u' for thumbs up, 'd' for thumbs down.")
+
+    feedback_text = input("Optional comments: ").strip()
+
+    feedback_entry = {
+        "query": query,
+        "expanded_query": expanded_query,
+        "answer": answer,
+        "rating": 1 if feedback_rating == "u" else -1,
+        "comments": feedback_text,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    save_feedback_to_chroma(feedback_entry)
+    print("Feedback saved successfully.\n")
+
+    return answer, feedback_entry
+
+# ========== Example Usage ==========
+if __name__ == "__main__":
+    query_1 = "User behavior scoring for policy gating: Behavioral scoring via Spanner will be used to gate access to certain tools. The feature tracks usage and adjusts gating based on BB divergence."
+    with open("data_sources/terminology.json", "r", encoding="utf-8") as f:
+        glossary = json.load(f)
+    expanded_query = expand_abbreviations(query_1, glossary)
+
+
+    answer = query_with_feedback(query_1, expanded_query, model="gemma3", documents=all_documents, prompt_file_path="prompts/geo_compliance_prompt.txt")

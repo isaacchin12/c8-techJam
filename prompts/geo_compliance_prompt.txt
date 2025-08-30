@@ -14,7 +14,7 @@ Task:
 - Determine if the feature artifact has geo-compliance implications. If yes, identify the relevant laws and provide a brief explanation of why it is relevant. If no, simply state "No geo-compliance implications".
 - Provide clear reasoning for your conclusions and also pointing out the source and the exact text.
 - Highlight one sentence from the user input: {query}, which the identified law applies to.
-- Cite the **exact supporting text** from the provided context
+- Cite the **exact supporting text** from the provided context in {context}
 - If there are multiple rules are violated in one feature, identify the relevant laws applicable as well.
 - Provide a confidence score from 1-10 for each identified law, where 10 means absolutely certain and 1 means very uncertain.
 - If the meaning behind abbrieviations are policy violations, flag that out as well.
@@ -35,6 +35,6 @@ Format the output as structured JSON:
     "law": "EU Digital Services Act (DSA)",
     "reasoning": "Explanation of why it applies and any other precautions to take",
     "highlight": "From {query}, quote the sentence that is most relevant to the law.",
-    "supporting_text": "Direct quote from the source file's context",
-    "confidence": "From 1 to 10, 1 being not confident and 10 being most confident"
+    "supporting_text": "Direct quotes from the source file's context. Provide references if possible.",
+    "confidence": 9
 ]
