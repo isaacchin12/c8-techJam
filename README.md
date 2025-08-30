@@ -36,7 +36,6 @@ CompliAI is an advanced system designed to help businesses ensure that their ope
 ### Prerequisites
 
 - Python >= 3.10  
-- Ollama API setup and API key
 - Ollama models downloaded locally via app
 - Required Python libraries: `langchain`, `nltk`, `openai`, `pandas`, etc.
 
@@ -58,6 +57,9 @@ Run the dashboard
 ```cmd
 streamlit run app.py
 ```
+
+## Libraries used
+`transformers` `ollama` `chromadb` `nltk` `bs4` `PyPDF2`
 
 
 
