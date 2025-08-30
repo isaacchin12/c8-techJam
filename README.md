@@ -51,7 +51,7 @@ pip install -r requirements.txt
 This step includes adding the ollama LLMs locally, via the Command Prompt. Download the models if you have yet to.
 ```cmd
 ollama pull mxbai-embed-large
-ollam run gemma3
+ollama run gemma3
 ```
 Run text_extraction.py first, followed by vector_db_querying.py
 
