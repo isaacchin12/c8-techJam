@@ -43,8 +43,7 @@ def set_up_chromadb():
 
     return collection
 
-#set_up_chromadb
-
+#collection = set_up_chromadb()
 
 def get_embedding(text):
     response = requests.post(
