@@ -184,7 +184,7 @@ if inputs_uploaded is not None:
                 st.session_state.input_pdf_text = input_pdf_text
                 # Mark that the prompt hasn't been shown for this new file yet
                 st.session_state.check_prompt_shown_for[inputs_uploaded.name] = False
-                st.toast(f"{inputs_uploaded.name} uploaded ✅", icon="✅")
+                st.toast(f"{inputs_uploaded.name} uploaded", icon="✅")
             else:
                 st.session_state.input_pdf_text = ""
 
