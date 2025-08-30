@@ -29,19 +29,12 @@ st.set_page_config(page_title="Policy Checker Chatbot", page_icon="✅", layout=
 # --- Utilities ---
 @st.cache_data
 def extract_text_from_pdf(uploaded_file) -> str:
-    try:
-        reader = PdfReader(uploaded_file)
-        pages = []
-        for p in reader.pages:
-            try:
-                pages.append(p.extract_text() or "")
-            except Exception:
-                # fall back to empty string for troublesome pages
-                pages.append("")
-        return "\n\n".join(pages).strip()
-    except Exception as e:
-        st.error(f"Failed to read PDF: {e}")
-        return ""
+    """Extracts text from a PDF file."""
+    text = ""
+    reader = PdfReader(uploaded_file)
+    for page in reader.pages:
+        text += page.extract_text() + "\n\n"
+    return text
 
 def _to_dict_from_string(s: str) -> Dict[str, Any]:
     try:
