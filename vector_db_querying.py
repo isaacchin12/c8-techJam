@@ -59,18 +59,6 @@ def set_up_chromadb():
 
     return collection, documents
 
-try:
-    collection
-except NameError:
-    collection = None
-
-try:
-    all_documents
-except NameError:
-    collection = None
-
-if collection is None:
-    collection, all_documents = set_up_chromadb()
 
 # ========== Embeddings ==========
 def get_embedding(text):
