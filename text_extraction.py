@@ -5,15 +5,40 @@ import requests
 from transformers import GPT2TokenizerFast
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
-<<<<<<< HEAD
-=======
 import re
+import json
 
 import nltk
+from nltk.data import find
 from nltk.tokenize import sent_tokenize
-nltk.download("punkt")
->>>>>>> frontend-testing-integration
 
+# Ensure NLTK looks in a stable, writable location (fixes punkt_tab lookup on some systems)
+NLTK_DATA_DIR = os.path.expanduser("~/nltk_data")
+if NLTK_DATA_DIR not in nltk.data.path:
+    nltk.data.path.append(NLTK_DATA_DIR)
+
+def _ensure_punkt_models() -> None:
+    """
+    Make sure sentence models exist across NLTK versions.
+    Newer NLTK uses punkt_tab; older uses punkt. Safe to call repeatedly.
+    """
+    # Try the newer punkt_tab first
+    try:
+        find("tokenizers/punkt_tab/english/")
+        return
+    except LookupError:
+        pass
+    # Ensure classic punkt is present
+    try:
+        find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt", download_dir=NLTK_DATA_DIR, quiet=True)
+    # Try to add punkt_tab if this NLTK supports it (no-op on older versions)
+    try:
+        nltk.download("punkt_tab", download_dir=NLTK_DATA_DIR, quiet=True)
+    except Exception:
+        # Older NLTK won’t have punkt_tab; that’s OK if punkt exists.
+        pass
 
 
 PDF_FILES = ["data_sources/california-state-law.pdf", "data_sources/eu-regulations.pdf", "data_sources/florida-state-law.pdf"]
@@ -22,22 +47,6 @@ HTML_FILES = ["data_sources/us-law.htm"]
 
 SOURCE_METADATA = {
         "data_sources/california-state-law.pdf": {
-<<<<<<< HEAD
-                                                        "title": "Protecting Our Kids from Social Media Addiction Act (California AB 2408)",
-                                                        "jurisdiction": "US-CA",
-                                                        "law_type": "ChildProtection",
-                                                        "doc_type": "Act",
-                                                        "section": "Sec. 2(b)(1)",
-                                                        "effective_date": "2024-01-01",
-                                                        "last_amended": "2024-07-15",
-                                                        "publisher": "California Legislature",
-                                                        "url": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2408",
-                                                        "language": "en",
-                                                        "doc_version": "Amended 2024",
-                                                        "tags": ["social media", "minors", "addiction prevention"],
-                                                        "authenticity": "Official",
-                                                        "source_file": "california-state-law.pdf.pdf"
-=======
                                                         "title": "SB-976 Protecting Our Kids from Social Media Addiction Act",
                                                         "jurisdiction": "US-CA",
                                                         "law_type": "ChildProtection",
@@ -51,7 +60,6 @@ SOURCE_METADATA = {
                                                         "tags": ["social media", "minors", "addiction prevention", "California"],
                                                         "authenticity": "Official",
                                                         "source_file": "california-state-law.pdf"
->>>>>>> frontend-testing-integration
                                                         },
 
         "data_sources/eu-regulations.pdf": {
@@ -59,36 +67,18 @@ SOURCE_METADATA = {
                                             "jurisdiction": "EU",
                                             "law_type": "PlatformRegulation",
                                             "doc_type": "Regulation",
-<<<<<<< HEAD
-                                            "section": "Chapter III, Article 26",
-=======
->>>>>>> frontend-testing-integration
                                             "effective_date": "2024-02-17",
                                             "last_amended": None,
                                             "publisher": "European Union",
                                             "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2065",
                                             "language": "en",
                                             "doc_version": "Original 2022",
-<<<<<<< HEAD
-                                            "tags": ["intermediary liability", "content moderation", "platform duties"],
-=======
                                             "tags": ["intermediary liability", "content moderation", "platform duties", "Europe"],
->>>>>>> frontend-testing-integration
                                             "authenticity": "Official",
                                             "source_file": "eu-regulations.pdf"
                                             },
 
         "data_sources/florida-state-law.pdf": {
-<<<<<<< HEAD
-                                                "title": "Florida Online Protections for Minors Act (HB 3, 2024)",
-                                                "jurisdiction": "US-FL",
-                                                "law_type": "ChildProtection",
-                                                "doc_type": "Act",
-                                                "section": "Sec. 4(a)(1)",
-                                                "effective_date": "2024-07-01",
-                                                "last_amended": None,
-                                                "publisher": "Florida Legislature",
-=======
                                                 "title": "CS/CS/HB 3: Online Protections for Minors",
                                                 "jurisdiction": "US-FL",
                                                 "law_type": "ChildProtection",
@@ -96,7 +86,6 @@ SOURCE_METADATA = {
                                                 "effective_date": "2025-01-01",
                                                 "last_amended": "2024-03-25",
                                                 "publisher": "Florida House of Representatives",
->>>>>>> frontend-testing-integration
                                                 "url": "https://www.flsenate.gov/Session/Bill/2024/3",
                                                 "language": "en",
                                                 "doc_version": "Original 2024",
@@ -106,20 +95,12 @@ SOURCE_METADATA = {
                                                 },
 
         "data_sources/us-law.htm": {
-<<<<<<< HEAD
-                        "title": "18 U.S. Code § 2258A - Reporting Requirements of Electronic Communication Service Providers and Remote Computing Service Providers",
-=======
                         "title": "18 U.S. Code § 2258A - Reporting requirements of providers",
->>>>>>> frontend-testing-integration
                         "jurisdiction": "US-Federal",
                         "law_type": "ReportingRequirement",
                         "doc_type": "Statute",
                         "section": "§2258A(b)(1)",
-<<<<<<< HEAD
-                        "effective_date": "2008-07-27",
-=======
                         "effective_date": "2024-05-07",
->>>>>>> frontend-testing-integration
                         "last_amended": "2022-12-23",
                         "publisher": "US Congress",
                         "url": "https://www.law.cornell.edu/uscode/text/18/2258A",
@@ -131,8 +112,7 @@ SOURCE_METADATA = {
                         }
 
 }
-<<<<<<< HEAD
-=======
+
 def clean_text(text):
 
     text = text.replace("“", '"').replace("”", '"').replace("’", "'")
@@ -159,28 +139,13 @@ def clean_text(text):
 
 
     return text.strip()
->>>>>>> frontend-testing-integration
 
 # -------------------------------
 # TOKENIZER for chunking
 # -------------------------------
-<<<<<<< HEAD
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
-def chunk_text(text, max_tokens=500, overlap=100):
-    words = text.split()
-    chunks = []
-    start = 0
-    while start < len(words):
-        end = min(start + max_tokens, len(words))
-        chunk = " ".join(words[start:end])
-        chunks.append(chunk)
-        start += max_tokens - overlap
-    return chunks
-
-=======
 
 def chunk_text(text, max_tokens=600, overlap=120):
+    _ensure_punkt_models()
     sentences = sent_tokenize(text)
     chunks, current_chunk = [], []
     current_len = 0
@@ -203,7 +168,6 @@ def chunk_text(text, max_tokens=600, overlap=120):
     return chunks
 
 
->>>>>>> frontend-testing-integration
 # -------------------------------
 # PDF Text Extraction
 # -------------------------------
@@ -266,61 +230,58 @@ def get_embedding(text):
 # -------------------------------
 # MAIN: ingest & chunk
 # -------------------------------
-all_chunks = []
 
-# PDFs
-for pdf_file in PDF_FILES:
-    text = extract_text_from_pdf(pdf_file)
-    chunks = chunk_text(text)
-    meta = SOURCE_METADATA[pdf_file]
-    for i, chunk in enumerate(chunks):
-        all_chunks.append({
-            "text": chunk,
-            "source": pdf_file,
-            "title": meta["title"],
-            "publisher": meta["publisher"],
-<<<<<<< HEAD
-            "section": meta["section"],
-=======
->>>>>>> frontend-testing-integration
-            "jurisdiction": meta["jurisdiction"],
-            "law_type": meta["law_type"],
-            "effective_date": meta["effective_date"],
-            "url": meta["url"],
-            "language": meta["language"],
-            "tags": meta["tags"],
-            "embedding": get_embedding(chunk)
-        })
+def create_chunks():
+    all_chunks = []
 
-# HTML
-for html_file in HTML_FILES:
-    text = extract_text_from_html(html_file)
-    chunks = chunk_text(text)
-    meta = SOURCE_METADATA[html_file]
-    for i, chunk in enumerate(chunks):
-        all_chunks.append({
-            "text": chunk,
-            "source": pdf_file,
-            "title": meta["title"],
-            "publisher": meta["publisher"],
-<<<<<<< HEAD
-            "section": meta["section"],
-=======
->>>>>>> frontend-testing-integration
-            "jurisdiction": meta["jurisdiction"],
-            "law_type": meta["law_type"],
-            "effective_date": meta["effective_date"],
-            "url": meta["url"],
-            "language": meta["language"],
-            "tags": meta["tags"],
-            "embedding": get_embedding(chunk)
-        })
+    # PDFs
+    for pdf_file in PDF_FILES:
+        text = extract_text_from_pdf(pdf_file)
+        chunks = chunk_text(text)
+        meta = SOURCE_METADATA[pdf_file]
+        for i, chunk in enumerate(chunks):
+            all_chunks.append({
+                "text": chunk,
+                "source": pdf_file,
+                "title": meta["title"],
+                "publisher": meta["publisher"],
+                "jurisdiction": meta["jurisdiction"],
+                "law_type": meta["law_type"],
+                "effective_date": meta["effective_date"],
+                "url": meta["url"],
+                "language": meta["language"],
+                "tags": meta["tags"],
+                "embedding": get_embedding(chunk)
+            })
+
+    # HTML
+    for html_file in HTML_FILES:
+        text = extract_text_from_html(html_file)
+        chunks = chunk_text(text)
+        meta = SOURCE_METADATA[html_file]
+        for i, chunk in enumerate(chunks):
+            all_chunks.append({
+                "text": chunk,
+                "source": pdf_file,
+                "title": meta["title"],
+                "publisher": meta["publisher"],
+                "jurisdiction": meta["jurisdiction"],
+                "law_type": meta["law_type"],
+                "effective_date": meta["effective_date"],
+                "url": meta["url"],
+                "language": meta["language"],
+                "tags": meta["tags"],
+                "embedding": get_embedding(chunk)
+            })
+    return all_chunks
 
 # -------------------------------
 # SAVE or INSERT into Vector DB
 # -------------------------------
-import json
-with open("rag_chunks.json", "w", encoding="utf-8") as f:
-    json.dump(all_chunks, f, indent=2, ensure_ascii=False)
 
-print(f"Completed ingestion: {len(all_chunks)} chunks ready for RAG pipeline!")
+def create_rag_chunks():
+    all_chunks = create_chunks()
+    with open("rag_chunks.json", "w", encoding="utf-8") as f:
+        json.dump(all_chunks, f, indent=2, ensure_ascii=False)
+
+    print(f"Completed ingestion: {len(all_chunks)} chunks ready for RAG pipeline!")

@@ -8,12 +8,19 @@ import streamlit as st
 from pypdf import PdfReader
 
 import vector_db_querying as vdb
+import text_extraction
+
+# get rag_chunks json
+@st.cache_resource
+def get_rag_chunks():
+    return text_extraction.create_rag_chunks()
 
 # spin up database
 @st.cache_resource
 def get_collection():
     return vdb.set_up_chromadb()
 
+get_rag_chunks()
 collection = get_collection()
 
 # --- Page config ---
@@ -110,32 +117,67 @@ def stream_chunks(text: str, chunk_size: int = 60, delay: float = 0.005) -> Iter
         time.sleep(delay)
 
 def render_model_output(data: Dict[str, Any]):
-    implications = data.get("implications", "").strip() if isinstance(data, dict) else ""
-    results = data.get("results", []) if isinstance(data, dict) else []
+    """Render with clear headers and no numeric indices.
+    - Headers: Implications, Results
+    - Show only results with confidence >= 5
+    - If none qualify: state that no rules are broken
+    """
+
+    if not isinstance(data, dict):
+        st.markdown(str(data))
+        return
+
+    implications = (data.get("implications") or "").strip()
+    results = data.get("results") if isinstance(data.get("results"), list) else []
+
+    # Header: Implications
     if implications:
         st.markdown(f"**Implications:** {implications}")
-    if isinstance(results, list) and results:
-        for i, item in enumerate(results, 1):
-            if not isinstance(item, dict):
-                continue
-            law = item.get("law", "")
-            reasoning = (item.get("reasoning") or "").strip()
-            highlight = (item.get("highlight") or "").strip()
-            supporting_text = (item.get("supporting_text") or "").strip()
-            confidence = item.get("confidence", "")
+    else:
+        st.markdown("**Implications:** (unspecified)")
+
+    # Header: Results
+    st.markdown("**Results:**")
+
+    # Filter results by confidence
+    filtered: list[Dict[str, Any]] = []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        conf = item.get("confidence", 0)
+        try:
+            conf_val = float(conf)
+        except Exception:
+            conf_val = 0.0
+        if conf_val >= 5:
+            filtered.append(item)
+
+    if not filtered:
+        st.markdown("- No rules are broken.")
+        return
+
+    # Render each qualifying rule without numeric indices
+    for item in filtered:
+        law = (item.get("law") or "").strip()
+        reasoning = (item.get("reasoning") or "").strip()
+        highlight = (item.get("highlight") or "").strip()
+        supporting_text = (item.get("supporting_text") or "").strip()
+        confidence = item.get("confidence", "")
+
+        if law:
             st.markdown(f"- **Law:** {law}")
-            if reasoning:
-                st.markdown(f"  - **Reasoning:** {reasoning}")
-            if highlight:
-                st.markdown(f"  - **Highlight:** “{highlight}”")
-            if supporting_text:
-                st.markdown(f"  - **Supporting Text:** “{supporting_text}”")
-            if confidence != "":
-                try:
-                    cval = float(confidence)
-                    st.markdown(f"  - **Confidence:** {cval}/10")
-                except Exception:
-                    st.markdown(f"  - **Confidence:** {confidence}")
+        if reasoning:
+            st.markdown(f"  - **Reasoning:** {reasoning}")
+        if highlight:
+            st.markdown(f"  - **Highlight:** “{highlight}”")
+        if supporting_text:
+            st.markdown(f"  - **Supporting Text:** “{supporting_text}”")
+        if confidence != "":
+            try:
+                cval = float(confidence)
+                st.markdown(f"  - **Confidence:** {cval}/10")
+            except Exception:
+                st.markdown(f"  - **Confidence:** {confidence}")
 
 
 # --- Session State ---
