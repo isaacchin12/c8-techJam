@@ -1,0 +1,15 @@
+Query: Feature reads user location to enforce France's copyright rules (download blocking)
+
+#####################
+
+Yes, this feature has geo-compliance implications.
+
+**Reasoning:**
+
+The feature described – using user location to enforce France's copyright rules and block downloads – directly relates to the enforcement of copyright laws, which are a matter of national jurisdiction. This falls under the purview of the EU Digital Services Act (DSA). The DSA mandates that online platforms must take measures to combat illegal content, including copyright infringement.
+
+**Relevant Law:**
+
+*   **EU Digital Services Act (DSA)** - Specifically, Article 17 of the DSA addresses the liability of online intermediary service providers for copyright infringement. This feature aligns with the DSA’s requirement to combat illegal content and enforce copyright rules.
+
+**Confidence Score:** 9/10 (Very high confidence due to direct alignment with a key DSA requirement.)
