@@ -29,3 +29,35 @@ CompliAI is an advanced system designed to help businesses ensure that their ope
   
   - Human Feedback Integration
     Users can provide feedback on the AI-generated assessments, which is stored and used to fine-tune future predictions.
+
+
+## Getting Started
+
+### Prerequisites
+
+- Python >= 3.10  
+- Ollama API setup and API key
+- Ollama models downloaded locally via app
+- Required Python libraries: `langchain`, `nltk`, `openai`, `pandas`, etc.
+
+### Installation
+
+```bash
+git clone https://github.com/{yourusername}/compliai.git
+cd compliai
+pip install -r requirements.txt
+```
+This step includes adding the ollama LLMs locally, via cmd.
+```cmd
+ollama pull mxbai-embed-large
+ollam run gemma3
+```
+Run text_extraction.py first, followed by vector_db_querying.py
+
+Run the dashboard
+```cmd
+streamlit run app.py
+```
+
+
+
