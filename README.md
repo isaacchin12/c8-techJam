@@ -16,19 +16,21 @@ CompliAI is an advanced system designed to help businesses ensure that their ope
 - Human Feedback Loop
   Allows users to rate AI assessments and provide comments, improving model accuracy over time.
 
+  <img width="1920" height="1080" alt="Rag-pipeline" src="https://github.com/user-attachments/assets/a3e27377-97df-49b0-9ad6-c3de07d720fc" />
+
 ## Architecture Overview
 
-  - Query Handling
-    User submits queries related to compliance checks (e.g., code, documentation, operational plans).
-  
-  - Hybrid Search
-    Searches regulatory databases using both vector embeddings and keyword matching to retrieve relevant context.
-  
-  - RAG Processing
+  - Baseline RAG Processing
     The retrieved documents are fed to the Ollama LLM to generate compliance assessment and recommendations.
   
+  - Hybrid Search
+    Searches regulatory databases using both vector embeddings, keyword matching and feedback scores to retrieve relevant context.
+    
+  - Reranking
+    Cross encoder is used to rank the final scores for the top k*2 chunks, to achieve a more clear ranking.
+  
   - Human Feedback Integration
-    Users can provide feedback on the AI-generated assessments, which is stored and used to fine-tune future predictions.
+    Users can provide feedback on the AI-generated assessments, which is stored and used to enhance better selection of context chunks.
 
 
 ## Getting Started
@@ -42,8 +44,8 @@ CompliAI is an advanced system designed to help businesses ensure that their ope
 ### Installation
 
 ```bash
-git clone https://github.com/{yourusername}/compliai.git
-cd compliai
+git clone https://github.com/{yourusername}/c8-techJam.git
+cd c8-techJam
 pip install -r requirements.txt
 ```
 This step includes adding the ollama LLMs locally, via the Command Prompt. Download the models if you have yet to.
