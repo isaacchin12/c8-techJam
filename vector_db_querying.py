@@ -123,7 +123,7 @@ def rerank_results(query, retrieved_chunks):
 
 
 # ========== Querying Function ==========
-def query_ollama(query, expanded_query, model, documents, prompt_file_path):
+def query_ollama(query, expanded_query, model, collection, documents, prompt_file_path):
 
     retrieved_chunks = hybrid_search(query, collection, documents, top_k=5, alpha=0.7)
     reranked_chunks = rerank_results(query, retrieved_chunks)
@@ -210,12 +210,15 @@ def query_with_feedback(query, expanded_query, model, documents, prompt_file_pat
 
     return answer, feedback_entry
 
-# ========== Example Usage ==========
-if __name__ == "__main__":
-    query_1 = "User behavior scoring for policy gating: Behavioral scoring via Spanner will be used to gate access to certain tools. The feature tracks usage and adjusts gating based on BB divergence."
-    with open("data_sources/terminology.json", "r", encoding="utf-8") as f:
-        glossary = json.load(f)
-    expanded_query = expand_abbreviations(query_1, glossary)
+# # ========== Example Usage ==========
+# if __name__ == "__main__":
+#     query_1 = "User behavior scoring for policy gating: Behavioral scoring via Spanner will be used to gate access to certain tools. The feature tracks usage and adjusts gating based on BB divergence."
+#     with open("data_sources/terminology.json", "r", encoding="utf-8") as f:
+#         glossary = json.load(f)
+#     expanded_query = expand_abbreviations(query_1, glossary)
 
 
-    answer = query_with_feedback(query_1, expanded_query, model="gemma3", documents=all_documents, prompt_file_path="prompts/geo_compliance_prompt.txt")
+#     answer = query_with_feedback(query_1, expanded_query, model="gemma3", documents=all_documents, prompt_file_path="prompts/geo_compliance_prompt.txt")
+
+with open("data_sources/terminology.json", "r", encoding="utf-8") as f:
+    glossary = json.load(f)

@@ -21,7 +21,7 @@ def get_collection():
     return vdb.set_up_chromadb()
 
 get_rag_chunks()
-collection = get_collection()
+collection, documents = get_collection()
 
 # --- Page config ---
 st.set_page_config(page_title="Policy Checker Chatbot", page_icon="✅", layout="wide")
@@ -81,7 +81,7 @@ def get_ollama_json(prompt) -> Dict[str, Any]:
     expanded_prompt = vdb.expand_abbreviations(prompt, vdb.glossary)
     MAX_RETRIES = 2
     for _ in range(MAX_RETRIES + 1):
-        raw = vdb.query_ollama(prompt, expanded_prompt, collection, model="llama3")
+        raw = vdb.query_ollama(prompt, expanded_prompt, "gemma3", collection, documents, prompt_file_path="prompts/geo_compliance_prompt.txt")
         data = _to_dict_from_string(raw)
         if _is_valid_payload(data):
             return data
