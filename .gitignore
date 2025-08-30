@@ -1,3 +1,4 @@
 .env
 chroma_store/
 rag_chunks.json
+__pycache__
