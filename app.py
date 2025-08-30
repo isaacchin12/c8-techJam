@@ -232,7 +232,7 @@ if policy_uploaded is not None:
                 if policy_pdf_name not in list(st.session_state.policy_texts.keys()):
                     policy_pdf_text = extract_text_from_pdf(uploaded_file)
                     st.session_state.policy_texts[policy_pdf_name] = policy_pdf_text
-                    st.toast(f"{policy_pdf_name} uploaded ✅", icon="✅")
+                    st.toast(f"{policy_pdf_name} uploaded", icon="✅")
 
 
 # --- Main layout ---
@@ -241,7 +241,7 @@ st.write("Upload a PDF or paste text, then ask the chatbot to check against your
 
 # If no PDFs, use text fallback for a default policy
 if not st.session_state.policy_texts:
-    st.warning("⚠️ Please upload a policy to be checked against. ⚠️")
+    st.warning("⚠️ Please upload policies to be used for checking. ⚠️")
 else:
     st.success(f"✅ Using the following documents as reference: {', '.join(st.session_state.policy_texts.keys())}")
 
@@ -325,7 +325,6 @@ user_query = st.chat_input("Ask to check for policy violations, or ask a follow-
 
 if user_query:
     st.session_state.messages.append({"role": "user", "content": user_query})
-
     # Stream reply and render structured output
     with st.chat_message("assistant"):
         with st.spinner("Checking with policies..."):
